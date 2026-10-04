@@ -1,0 +1,91 @@
+---
+title: "p8105_hw2_xl3712"
+author: "Xieyu Liu"
+date: "2026-10-02"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+## Problem 1
+```{r}
+Transit_df = read_csv("data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")|>
+  janitor::clean_names()|>
+  select(
+    line,
+    station_name,
+    station_latitude,
+    station_longitude,
+    route1:route11,
+    entry,
+    vending,
+    entrance_type,
+    ada
+  ) |>
+  mutate(entry = case_match(
+    entry,
+    "YES" ~ T,
+    "NO" ~ F
+  ))
+```
+
+The dataset contains line, station name, station latitude, station longitude, routes 1 to 11, entry, vending, entrance type and ADA compliant. I first imported the NYC Transit Data, and cleaned the variable names. Then, I select the relevant columns and converted the entry variable from "YES" or "NO" to TRUE or FALSE. The dataset has `r nrow(Transit_df)` rows and `r ncol(Transit_df)` columns. These data are not tidy because the routes served are stored across 11 columns instead of one variable.
+
+```{r}
+Transit_df |>
+  distinct(line, station_name) |>
+  nrow()
+```
+
+There are 465 distinct stations.
+
+```{r}
+Transit_df |>
+  distinct(line, station_name, ada) |>
+  filter(ada == "TRUE") |>
+  nrow()
+```
+
+There are 84 ADA-compliant stations.
+
+```{r}
+Transit_df |>
+  filter(vending == "NO")|>
+  summarize(
+    proportion = mean(entry)
+  )
+```
+
+Among station entrance/exits without vending, 37.7% allow entrance.
+
+```{r}
+Transit_df_reformat = Transit_df |>
+  mutate(across(route1:route11, as.character)) |>
+  pivot_longer(
+    route1:route11,
+    names_to = "route_number",
+    names_prefix = "route",
+    values_to = "route_name"
+  )
+```
+
+```{r}
+Transit_df_reformat|>
+  filter(route_name == "A")|>
+  distinct(line, station_name) |>
+  nrow()
+```
+
+There are 60 distinct stations that serve the A train.
+
+```{r}
+Transit_df_reformat|>
+  filter(route_name == "A")|>
+  distinct(line, station_name, ada) |>
+  filter(ada == "TRUE") |>
+  nrow()
+```
+
+Of these stations, 17 are ADA compliant.
