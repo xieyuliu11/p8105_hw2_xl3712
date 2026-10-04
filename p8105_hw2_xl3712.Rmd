@@ -175,3 +175,94 @@ Trash_Wheel_df|>
 ```
 
 The total number of cigarette butts collected by Gwynnda in June 2022 was 18120.
+
+## Problem 3
+
+```{r}
+baseline_df = 
+  read_csv("data/MCI_baseline.csv",
+           na = ".",
+           skip = 1)|>
+  janitor::clean_names()|>
+  mutate(sex = 
+           factor(sex,
+                  levels = c(0,1),
+                  labels = c("Female","Male")),
+         apoe4 = factor(apoe4,
+                        levels = c(0,1),
+                        labels = c("Non-carrier","Carrier")))
+```
+
+The baseline demographics dataset contains 483 participants and 6 variables. During import, missing values represented by "." were converted to NA, and the first row was skipped because it contained descriptions of the variables rather than variable names. Variable names were cleaned using `clean_names()`. Sex was recoded as a factor with levels of Female and Male, and APOE4 carrier status was recoded as a factor with levels of Non-carrier and Carrier. The study participants were free of MCI at baseline. The `age_at_onset` variable contains missing values for participants who remained MCI-free during the follow-up period.
+
+```{r}
+baseline_df|>
+  summarise(
+    n_recruited = n(),
+    n_mci = sum(!is.na(age_at_onset)))
+```
+
+483 participants were recruited, and 97 of them developed MCI.
+
+```{r}
+baseline_df|>
+  summarise(average_age = mean(current_age))
+```
+
+The average baseline age is 65.
+
+```{r}
+baseline_df|>
+  filter(sex == "Female")|>
+  summarise(
+    proportion = mean(apoe4 == "Carrier") *100
+  )
+```
+
+29.9% of the women in the study are APOE4 carriers.
+
+```{r}
+amyloid_df = 
+  read_csv("data/mci_amyloid.csv",
+           skip = 1,
+           na = c("NA","Na"))|>
+  janitor::clean_names()|>
+  pivot_longer(baseline:time_8,
+               names_to = "time",
+               names_prefix = "time_",
+               values_to = "amyloid_42_40")|>
+  mutate(time = if_else(time == "baseline","0",time),
+         time = as.numeric(time)
+  )
+dim(amyloid_df)
+```
+
+The longitudinal biomarker dataset contains repeated measurements of the amyloid 42/40 ratio for study participants at baseline and at 2, 4, 6, and 8 years after baseline. During import, the first row was skipped, and "NA" and "Na" were specified as missing values. Variable names were cleaned using `clean_names()`. The dataset was reshaped from wide to long format using `pivot_longer()`, with measurement time stored in a single `time` variable and the corresponding amyloid 42/40 ratio stored in `amyloid_42_40`. Baseline was coded as 0 years, and the time variable was converted to numeric. The resulting dataset contains `r nrow(amyloid_df)` observations and `r ncol(amyloid_df)` variables.
+
+```{r}
+baseline_df|>
+  anti_join(amyloid_df, by = c("id" = "study_id"))|>
+  nrow()
+
+amyloid_df|>
+  anti_join(baseline_df, by = c("study_id" = "id"))|>
+  distinct(study_id)|>
+  nrow()
+```
+
+8 participants appear only in the baseline dataset, while 12 participants appear only in the amyloid dataset.
+
+```{r}
+combined_df = 
+  baseline_df|>
+  inner_join(amyloid_df,
+             by = c("id" = "study_id"))
+
+combined_df|>
+  distinct(id)|>
+  nrow()
+
+write_csv(combined_df,"data/MCI_combined.csv")
+```
+
+The resulting dataset contains 475 participants and `r nrow(combined_df)` observations across `r ncol(combined_df)` variables. It includes demographic characteristics such as age, sex, education, and APOE4 carrier status, as well as longitudinal amyloid 42/40 ratio measurements at different follow-up times.
