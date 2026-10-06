@@ -99,7 +99,7 @@ library(readxl)
 
 ```{r}
 Mr_Trash_Wheel_df = 
-  read_excel("data/202509 Trash Wheel Collection Data.xlsx",
+  read_excel("data/202610 Trash Wheel Collection Data.xlsx",
              sheet = "Mr. Trash Wheel",
              skip = 1,
              range = cell_cols(1:14)
@@ -113,7 +113,7 @@ Mr_Trash_Wheel_df =
 
 ```{r}
 Professor_Trash_Wheel_df = 
-  read_excel("data/202509 Trash Wheel Collection Data.xlsx",
+  read_excel("data/202610 Trash Wheel Collection Data.xlsx",
              sheet = "Professor Trash Wheel",
              skip = 1
              ) |>
@@ -123,8 +123,8 @@ Professor_Trash_Wheel_df =
 
 ```{r}
 Gwynnda_df = 
-  read_excel("data/202509 Trash Wheel Collection Data.xlsx",
-             sheet = "Gwynns Falls Trash Wheel",
+  read_excel("data/202610 Trash Wheel Collection Data.xlsx",
+             sheet = "Gwynnda the Good Wheel of the W",
              skip = 1
              )|>
   janitor::clean_names()|>
@@ -134,13 +134,14 @@ Gwynnda_df =
 ```{r}
 Mr_Trash_Wheel_df = 
   Mr_Trash_Wheel_df|>
-  mutate(trash_wheel = "Mr",
-         year = as.character(year))
+  mutate(trash_wheel = "Mr")
 
 Professor_Trash_Wheel_df =
   Professor_Trash_Wheel_df|>
   mutate(trash_wheel = "Professor",
-         year = as.character(year))
+         year = as.character(year),
+         plastic_bottles = na_if(plastic_bottles, "dive"),
+         plastic_bottles = as.numeric(plastic_bottles))
 
 Gwynnda_df = 
   Gwynnda_df|>
@@ -164,7 +165,7 @@ Trash_Wheel_df|>
   summarise(total_weight = sum(weight_tons))
 ```
 
-The total weight of trash collected by Professor Trash Wheel was 282 tons.
+The total weight of trash collected by Professor Trash Wheel was 295 tons.
 
 ```{r}
 Trash_Wheel_df|>
